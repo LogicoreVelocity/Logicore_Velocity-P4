@@ -1,0 +1,421 @@
+openapi: 3.0.3
+info:
+  title: Logicore Velocity API (Phase 4)
+  version: 0.1.0
+servers:
+  - url: http://localhost:4000
+tags:
+  - name: Auth
+  - name: Drivers
+  - name: Finance
+  - name: Approvals
+  - name: SuperAdmin
+  - name: Imports
+  - name: Integrations
+  - name: Mobile
+  - name: AI
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    LoginRequest:
+      type: object
+      required: [tenant_id, email, password]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            role: { type: string }
+            tenant_id: { type: string, format: uuid }
+            email: { type: string }
+    Driver:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        full_name: { type: string }
+        phone: { type: string }
+        visa_type: { type: string }
+        employee_code_type: { type: string }
+        employee_code: { type: string }
+        status: { type: string }
+        license_no: { type: string, nullable: true }
+        license_issue_date: { type: string, format: date, nullable: true }
+        license_expiry_date: { type: string, format: date, nullable: true }
+        notes: { type: string }
+    FinanceTransaction:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tx_type: { type: string, enum: [PAYABLE, RECEIVABLE] }
+        category_id: { type: string, format: uuid }
+        subcategory_id: { type: string, format: uuid }
+        amount: { type: number }
+        currency: { type: string }
+        effective_date: { type: string, format: date }
+        status: { type: string }
+        notes: { type: string }
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      security: []
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /auth/login:
+    post:
+      security: []
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /drivers:
+    get:
+      tags: [Drivers]
+      summary: List drivers (search/filter/sort supported)
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string, example: "updated_at:desc" }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 25 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Drivers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Driver" }
+                  total:
+                    type: integer
+    post:
+      tags: [Drivers]
+      summary: Create driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name, phone, visa_type, notes]
+              properties:
+                full_name: { type: string }
+                phone: { type: string }
+                email: { type: string }
+                visa_type: { type: string, enum: [OWN_VISA, NEED_VISA, NEED_VISA_AND_LICENSE] }
+                joined_at: { type: string, format: date }
+                notes: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Driver" }
+
+  /drivers/{driverId}/transition:
+    post:
+      tags: [Drivers]
+      summary: Transition driver status (state machine enforced)
+      parameters:
+        - in: path
+          name: driverId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_status, reason, notes]
+              properties:
+                to_status: { type: string }
+                reason: { type: string }
+                notes: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /finance/transactions:
+    post:
+      tags: [Finance]
+      summary: Create finance transaction (any permitted user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tx_type, category_id, subcategory_id, amount, effective_date, notes]
+              properties:
+                driver_id: { type: string, format: uuid }
+                tx_type: { type: string, enum: [PAYABLE, RECEIVABLE] }
+                category_id: { type: string, format: uuid }
+                subcategory_id: { type: string, format: uuid }
+                amount: { type: number }
+                currency: { type: string, default: "AED" }
+                effective_date: { type: string, format: date }
+                external_ref: { type: string }
+                notes: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceTransaction" }
+
+  /finance/transactions/{txId}/edit-request:
+    post:
+      tags: [Finance]
+      summary: Request edit (requires Super Admin approval)
+      parameters:
+        - in: path
+          name: txId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [proposed_changes, notes]
+              properties:
+                proposed_changes: { type: object }
+                notes: { type: string }
+      responses:
+        "200": { description: Requested }
+
+  /approvals:
+    get:
+      tags: [Approvals]
+      summary: List approvals
+      responses:
+        "200": { description: OK }
+
+  /approvals/{approvalId}/decide:
+    post:
+      tags: [Approvals]
+      summary: Approve/Reject
+      parameters:
+        - in: path
+          name: approvalId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, notes]
+              properties:
+                decision: { type: string, enum: [APPROVED, REJECTED] }
+                notes: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /superadmin/settings:
+    get:
+      tags: [SuperAdmin]
+      summary: Get settings (Super Admin)
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [SuperAdmin]
+      summary: Update settings (Super Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, value, notes]
+              properties:
+                key: { type: string }
+                value: { type: object }
+                notes: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /superadmin/sheet-sources:
+    post:
+      tags: [SuperAdmin]
+      summary: Create sheet source (Super Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, url, mapping_json, notes]
+              properties:
+                name: { type: string }
+                url: { type: string }
+                mapping_json: { type: object }
+                scope: { type: object }
+                schedule_minutes: { type: integer, default: 180 }
+                enabled: { type: boolean, default: true }
+                notes: { type: string }
+      responses:
+        "201": { description: Created }
+
+  /imports/templates/{name}:
+    get:
+      tags: [Imports]
+      summary: Download CSV template
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: CSV file }
+
+  /imports/preview:
+    post:
+      tags: [Imports]
+      summary: Validate and store an onboarding import preview
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, data_type, notes]
+              properties:
+                file: { type: string, format: binary }
+                data_type: { type: string, enum: [ONBOARDING, DRIVERS_ONBOARDING] }
+                notes: { type: string, minLength: 1 }
+      responses:
+        "201": { description: Preview created }
+        "400": { description: Invalid file or rows }
+        "502": { description: Python processing service unavailable }
+
+  /imports/jobs:
+    get:
+      tags: [Imports]
+      summary: List recent tenant-scoped import jobs
+      responses:
+        "200": { description: Import job list }
+
+  /imports/{jobId}/commit:
+    post:
+      tags: [Imports]
+      summary: Commit valid rows from an onboarding preview
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes: { type: string, minLength: 1 }
+      responses:
+        "200": { description: Import committed }
+        "409": { description: Import already committed }
+        "410": { description: Preview expired }
+
+  /mobile/payslips:
+    get:
+      tags: [Mobile]
+      summary: Driver payslips list (auth required)
+      responses:
+        "200": { description: OK }
+
+  /mobile/support/tickets:
+    post:
+      tags: [Mobile]
+      summary: Create support ticket (driver)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, mode, subject, description, notes]
+              properties:
+                category: { type: string, enum: [RIDER_VEHICLE, RIDER_CLIENT, RIDER_ACCOUNTS] }
+                mode: { type: string, enum: [CALLBACK, MESSAGE] }
+                scheduled_call_at: { type: string, format: date-time }
+                subject: { type: string }
+                description: { type: string }
+                notes: { type: string }
+      responses:
+        "201": { description: Created }
+
+  /ai/compose:
+    post:
+      tags: [AI]
+      summary: AI action composer (draft forms)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt: { type: string }
+      responses:
+        "200": { description: Draft action }

@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: logicore_velocity
+      POSTGRES_USER: logicore
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - logicore_pgdata:/var/lib/postgresql/data
+
+  python-processing:
+    build:
+      context: ../services/python-processing
+    environment:
+      APP_ENV: development
+      PROCESSING_SERVICE_TOKEN: ${PYTHON_PROCESSOR_TOKEN:-local-development-token-change-me}
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  logicore_pgdata:

@@ -1,0 +1,3 @@
+driver_identifier,effective_date,category,subcategory,amount,currency,external_ref,notes
+DRIVER_PHONE_OR_EMP_CODE,2026-01-10,FINES,SPEEDING_FINE,500,AED,TICKET123,Speeding fine
+DRIVER_PHONE_OR_EMP_CODE,2026-01-12,RENTAL,RENTAL_RECEIVABLE,1100,AED,,Monthly rental receivable

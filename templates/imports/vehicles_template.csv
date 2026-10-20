@@ -1,0 +1,2 @@
+plate_number,make_model,year,box_installed,same_brand,advertisement,box_installed_from,box_installed_at,advertisement_permit_expiry,status,notes
+ABC123,Toyota Corolla,2022,true,true,true,Warehouse A,2026-01-01,2026-12-31,IN_STOCK,New vehicle with branding

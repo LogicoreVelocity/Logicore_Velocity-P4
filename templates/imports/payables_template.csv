@@ -1,0 +1,4 @@
+driver_identifier,effective_date,category,subcategory,amount,currency,external_ref,notes
+DRIVER_PHONE_OR_EMP_CODE,2026-01-01,SALARY,BASIC,2800,AED,,Monthly salary basic
+DRIVER_PHONE_OR_EMP_CODE,2026-01-01,SALARY,ATTENDANCE_BONUS,150,AED,,Attendance bonus
+DRIVER_PHONE_OR_EMP_CODE,2026-01-01,SALARY,PERFORMANCE_BONUS,150,AED,,Performance bonus

@@ -1,0 +1,3 @@
+driver_identifier,project_name,client_project_id,salary_mode,fixed_basic,fixed_attendance_bonus,fixed_performance_bonus,per_order_rate,rental_receivable_default,start_date,end_date,notes
+DRIVER_PHONE_OR_EMP_CODE,Project A,CLIENT_PROJ_001,FIXED,2800,150,150,,1100,2026-01-01,,Assigned on fixed salary default
+DRIVER_PHONE_OR_EMP_CODE,Project B,CLIENT_PROJ_002,PER_ORDER,,,,15,1100,2026-01-01,,Assigned on per-order salary
