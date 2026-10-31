@@ -1,6 +1,7 @@
 {
   "name": "logicore-velocity-phase4-fullstack",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/*"
   ],
@@ -12,7 +13,16 @@
     "test:python": "python -m unittest discover -s services/python-processing/tests -v",
     "db:migrate": "npm --workspace apps/api run db:migrate",
     "db:seed": "npm --workspace apps/api run db:seed",
-    "lint": "npm --workspace apps/api run lint && npm --workspace apps/web-admin run lint && npm --workspace apps/mobile-driver run lint"
+    "lint": "eslint apps/*/src --ext .ts,.tsx",
+    "lint:api": "eslint apps/api/src --ext .ts",
+    "lint:web": "eslint apps/web-admin/src --ext .ts,.tsx",
+    "lint:mobile": "eslint apps/mobile-driver/src --ext .ts,.tsx",
+    "lint:fix": "eslint apps/*/src --ext .ts,.tsx --fix",
+    "test": "vitest run",
+    "test:api": "vitest run --root apps/api",
+    "test:web": "vitest run --root apps/web-admin",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,js,jsx,json}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,jsx,json}\""
   },
   "dependencies": {
     "append-field": "^1.0.0",
@@ -29,5 +39,16 @@
     "to-regex-range": "^5.0.1",
     "ts-interface-checker": "^0.1.13",
     "xtend": "^4.0.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.7",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "vitest": "^5.0.5"
   }
 }
