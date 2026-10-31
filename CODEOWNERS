@@ -1,0 +1,38 @@
+# Logicore Velocity Phase-4 — Code Owners
+
+# Global defaults
+*                                           @logicore-maintainers
+
+# Backend API (Node.js + Express + TypeScript)
+/apps/api/                                  @logicore-backend-team
+
+# Admin Web Portal (React + Vite + Tailwind)
+/apps/web-admin/                            @logicore-frontend-team
+
+# Driver Mobile App (Expo + React Native)
+/apps/mobile-driver/                        @logicore-mobile-team
+
+# Python Processing Service (FastAPI)
+/services/python-processing/                @logicore-data-team
+
+# Database migrations
+/db/migrations/                             @logicore-backend-team
+
+# Infrastructure (Docker Compose)
+/infra/                                     @logicore-devops-team
+
+# OpenAPI contract
+/openapi/                                   @logicore-backend-team @logicore-frontend-team
+
+# Import templates
+/templates/                                 @logicore-backend-team
+
+# Documentation
+/docs/                                      @logicore-maintainers
+
+# Root configuration
+/package.json                               @logicore-maintainers
+/package-lock.json                          @logicore-maintainers
+/.github/                                   @logicore-devops-team
+/.eslintrc.json                             @logicore-maintainers
+/.prettierrc                                @logicore-maintainers

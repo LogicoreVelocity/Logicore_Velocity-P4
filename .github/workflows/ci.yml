@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  test-api:
+    name: Test API (Node.js + Express)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: logicore_velocity
+          POSTGRES_USER: logicore
+          POSTGRES_PASSWORD: password
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U logicore -d logicore_velocity"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci --workspace apps/api
+      - run: cp apps/api/.env.example apps/api/.env
+      - run: npm run test --workspace apps/api
+      - run: npm run db:migrate --workspace apps/api
+      - run: npm run build --workspace apps/api
+
+  test-web:
+    name: Test Web Admin (React + Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci --workspace apps/web-admin
+      - run: npm run test --workspace apps/web-admin
+      - run: npm run build --workspace apps/web-admin
+
+  test-mobile:
+    name: Lint Mobile (Expo + React Native)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci --workspace apps/mobile-driver
+      - run: npm run lint --workspace apps/mobile-driver
+
+  test-python:
+    name: Test Python Processing Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - run: pip install -r services/python-processing/requirements.txt
+      - run: pip install pytest
+      - run: python -m pytest services/python-processing/tests/ -v
